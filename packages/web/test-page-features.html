@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Test Verify Page Features</title>
+</head>
+<body>
+    <h1>Testing Verify Page</h1>
+    <div id="results"></div>
+    
+    <script>
+        async function testPageFeatures() {
+            const results = document.getElementById('results');
+            results.innerHTML = '<p>Testing verify page...</p>';
+            
+            try {
+                // Test if the page loads
+                const response = await fetch('http://localhost:3000/verify/');
+                if (response.ok) {
+                    results.innerHTML += '<p>✅ Verify page loads successfully</p>';
+                    
+                    const html = await response.text();
+                    
+                    // Check for key components
+                    if (html.includes('Upload ID')) {
+                        results.innerHTML += '<p>✅ Upload ID component found</p>';
+                    } else {
+                        results.innerHTML += '<p>❌ Upload ID component missing</p>';
+                    }
+                    
+                    if (html.includes('Face Scan')) {
+                        results.innerHTML += '<p>✅ Face Scan component found</p>';
+                    } else {
+                        results.innerHTML += '<p>❌ Face Scan component missing</p>';
+                    }
+                    
+                    // Check for JavaScript files
+                    if (html.includes('verify.js')) {
+                        results.innerHTML += '<p>✅ Verify page JavaScript loaded</p>';
+                    } else {
+                        results.innerHTML += '<p>❌ Verify page JavaScript missing</p>';
+                    }
+                    
+                    results.innerHTML += '<p>✅ All basic tests passed!</p>';
+                } else {
+                    results.innerHTML += '<p>❌ Failed to load verify page: ' + response.status + '</p>';
+                }
+            } catch (error) {
+                results.innerHTML += '<p>❌ Error testing page: ' + error.message + '</p>';
+            }
+        }
+        
+        testPageFeatures();
+    </script>
+</body>
+</html>

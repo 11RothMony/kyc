@@ -1,0 +1,22 @@
+{
+  "name": "kyc",
+  "private": true,
+  "packageManager": "yarn@4.9.2",
+  "workspaces": [
+    "packages/*"
+  ],
+  "scripts": {
+    "dev": "yarn workspace web dev",
+    "build": "yarn workspace web build",
+    "start": "yarn workspace web start",
+    "lint": "yarn workspace web lint",
+    "type-check": "yarn workspace web type-check"
+  },
+  "devDependencies": {
+    "@types/node": "^20.0.0",
+    "typescript": "^5.0.0"
+  },
+  "dependencies": {
+    "tesseract.js": "^6.0.1"
+  }
+}
