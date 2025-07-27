@@ -167,27 +167,28 @@ export function FileUpload({
                   alt="Preview"
                   className="w-24 h-24 object-cover rounded-lg border"
                 />
-                <button
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    handleRemove();
-                  }}
-                  className="absolute -top-2 -right-2 bg-red-500 text-white rounded-full p-1 w-6 h-6 flex items-center justify-center text-xs hover:bg-red-600 transition-colors"
-                  title="Remove"
-                >
-                  X 
-                </button>
               </div>
               <div className="flex-1 min-w-0">
-                  <div className="w-full  ">
-                    <p className="text-sm font-medium text-gray-900 truncate">
-                      {selectedFile.name}
-                    </p>
-                    <p className="text-xs text-gray-500">
-                      {(selectedFile.size / 1024 / 1024).toFixed(2)} MB
-                    </p>
-                  </div>
-               
+                <div className="w-full space-y-1">
+                  <p className="text-sm  font-medium text-gray-900 truncate">
+                    {selectedFile.name}
+                  </p>
+                  <p className="text-xs text-gray-500">
+                    {(selectedFile.size / 1024 / 1024).toFixed(2)} MB
+                  </p>
+                  <Button
+                    size={'sm'}
+                    variant={'outline'}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      handleRemove();
+                    }}
+                    title="Remove"
+                  >
+                    Remove
+                  </Button>
+                </div>
+
 
                 {isUploading && (
                   <div className="mt-2">

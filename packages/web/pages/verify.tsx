@@ -32,7 +32,6 @@ export default function Verify() {
   const [isUploading, setIsUploading] = useState(false)
   const [uploadProgress, setUploadProgress] = useState(0)
   const [uploadError, setUploadError] = useState<string | null>(null)
-  const [isDetectionActive, setIsDetectionActive] = useState(false)
   const [ocrManager] = useState(new OCRManager(defaultOCRConfig))
   const { toast, showToast, hideToast } = useToast()
 
@@ -53,33 +52,6 @@ export default function Verify() {
     }
   }, [])
 
-
-  // const handleVerification = async () => {
-  //   if (!uploadedFileData || !faceImageData) return
-
-  //   setIsProcessing(true)
-  //   setVerificationError(null)
-  //   setVerificationResult(null)
-  //   setShowResults(true)
-
-  //   try {
-  //     // Process verification using uploaded file data
-  //     const result = await faceRecognitionManager.processVerification(
-  //       uploadedFileData.dataUrl,
-  //       faceImageData
-  //     )
-
-  //     if (result.success && result.result) {
-  //       setVerificationResult(result.result)
-  //     } else {
-  //       setVerificationError(result.error?.message || 'Verification failed')
-  //     }
-  //   } catch (error) {
-  //     setVerificationError(error instanceof Error ? error.message : 'An unexpected error occurred')
-  //   } finally {
-  //     setIsProcessing(false)
-  //   }
-  // }
 
   const handleVerificationWithData = async (capturedImageData: string) => {
     if (!uploadedFileData || !capturedImageData) return
@@ -132,35 +104,20 @@ export default function Verify() {
     setCurrentView('camera')
     setSelectedFile(null)
     setUploadError(null)
-    setIsDetectionActive(false)
   }
 
-  const handleStartDetection = () => {
-    setIsDetectionActive(true)
+
+  const handleCameraView = () => {
     setCurrentView('camera')
-    // Clear verification results when starting camera
+    // Clear verification results when switching to camera
     setVerificationResult(null)
     setVerificationError(null)
     setShowResults(false)
   }
 
-  const handleCameraView = () => {
-    setCurrentView('camera')
-    if (!isDetectionActive && !faceImageData) {
-      setIsDetectionActive(true)
-      // Clear verification results when starting camera
-      setVerificationResult(null)
-      setVerificationError(null)
-      setShowResults(false)
-    }
-  }
-
   const handleFaceCapture = async (imageData: string | null) => {
     setFaceImageData(imageData)
     if (imageData) {
-      // Automatically switch back or show success message
-      setIsDetectionActive(false)
-
       //Automatically trigger verification when face is captured and ID is uploaded
       if (uploadedFileData) {
         await handleVerificationWithData(imageData)
@@ -233,7 +190,7 @@ export default function Verify() {
         <main className="px-4 py-6" role="main">
           <div className='flex-wrap flex gap-2 justify-center text-center p-3'>
             <a target="_blank" href="https://www.facebook.com/SeksaaTechacAdemy">
-              <img className='w-24 h-24 rounded-full' src="logo-seksaa.jpg" alt="logo" />
+              <img className='w-24 h-24 rounded-full' src="/logo-seksaa.jpg" alt="logo" />
             </a>
             <h2 className=' text-3xl sm:text-4xl font-bold bg-gradient-to-r from-indigo-600 via-purple-600 to-pink-600 bg-clip-text text-transparent sm:mb-4 leading-tight'>
               <a target="_blank" href="https://www.facebook.com/SeksaaTechacAdemy">
@@ -380,10 +337,11 @@ export default function Verify() {
                     </div>
                   </div>
 
-                  {currentView === 'camera' && (isDetectionActive || faceImageData) ? (
+                  {currentView === 'camera' && uploadedFileData ? (
                     <div>
                       <AutoCamera
                         onImageCapture={handleFaceCapture}
+                        onCancel={() => setCurrentView('upload')}
                         autoStart={true}
                       />
                     </div>
@@ -394,13 +352,13 @@ export default function Verify() {
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 13a3 3 0 11-6 0 3 3 0 016 0z" />
                       </svg>
                       <p className="text-gray-600 text-center mb-4">
-                        Ready to start face detection
+                        Please upload your ID card first
                       </p>
                       <Button
-                        onClick={handleStartDetection}
-                        className="bg-purple-600 hover:bg-purple-700"
+                        onClick={() => setCurrentView('upload')}
+                        className="bg-blue-600 hover:bg-blue-700"
                       >
-                        Start Face Detection
+                        Upload ID Card
                       </Button>
                     </div>
                   ) : null}

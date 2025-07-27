@@ -5,6 +5,7 @@ import { CameraService } from '@/lib/camera-service'
 
 interface AutoCameraProps {
   onImageCapture: (imageData: string | null) => void
+  onCancel?: () => void
   autoStart?: boolean
   className?: string
   disabled?: boolean
@@ -14,7 +15,8 @@ interface AutoCameraProps {
 }
 
 export function AutoCamera({ 
-  onImageCapture, 
+  onImageCapture,
+  onCancel,
   autoStart = true,
   className,
   disabled = false,
@@ -27,15 +29,11 @@ export function AutoCamera({
   const [error, setError] = useState<string | null>(null)
   const [isInitializing, setIsInitializing] = useState(false)
   const [streamReady, setStreamReady] = useState(false)
-  const [countdown, setCountdown] = useState(0)
-  const [faceDetected, setFaceDetected] = useState(false)
   const [isCapacitor, setIsCapacitor] = useState(false)
   
   const videoRef = useRef<HTMLVideoElement>(null)
   const canvasRef = useRef<HTMLCanvasElement>(null)
   const streamRef = useRef<MediaStream | null>(null)
-  const detectionRef = useRef<number | null>(null)
-  const countdownRef = useRef<number | null>(null)
 
 
   // Capacitor camera capture
@@ -64,177 +62,7 @@ export function AutoCamera({
     }
   }, [width, height, onImageCapture])
 
-  // Face detection - checks for presence in circular region
-  const detectFace = useCallback(() => {
-    if (!videoRef.current || !canvasRef.current || !streamReady) return false
 
-    const video = videoRef.current
-    const canvas = canvasRef.current
-    const context = canvas.getContext('2d')
-    
-    if (!context || video.videoWidth === 0 || video.videoHeight === 0) return false
-
-    // Set canvas size to match video
-    canvas.width = video.videoWidth
-    canvas.height = video.videoHeight
-    
-    // Draw current video frame
-    context.save()
-    context.scale(-1, 1) // Mirror the image like the video display
-    context.drawImage(video, -canvas.width, 0, canvas.width, canvas.height)
-    context.restore()
-    
-    const imageData = context.getImageData(0, 0, canvas.width, canvas.height)
-    const centerX = canvas.width / 2
-    const centerY = canvas.height / 2
-    const faceRegionSize = Math.min(canvas.width, canvas.height) * 0.3
-    const radius = faceRegionSize / 2
-    
-    // Check if there's sufficient pixel variation in the circular region
-    let totalPixels = 0
-    let avgBrightness = 0
-    let pixelVariation = 0
-    let darkPixels = 0
-    
-    for (let y = Math.max(0, centerY - radius); y < Math.min(canvas.height, centerY + radius); y++) {
-      for (let x = Math.max(0, centerX - radius); x < Math.min(canvas.width, centerX + radius); x++) {
-        const dx = x - centerX
-        const dy = y - centerY
-        const distance = Math.sqrt(dx * dx + dy * dy)
-        
-        // Only check pixels within the circle
-        if (distance <= radius) {
-          const index = Math.floor(y) * canvas.width * 4 + Math.floor(x) * 4
-          const r = imageData.data[index] || 0
-          const g = imageData.data[index + 1] || 0
-          const b = imageData.data[index + 2] || 0
-          
-          const brightness = (r + g + b) / 3
-          avgBrightness += brightness
-          totalPixels++
-          
-          // Count dark pixels (likely shadows/hair/features)
-          if (brightness < 100) darkPixels++
-          
-          // Check for variation compared to neighbors
-          if (x > 0) {
-            const neighborIndex = Math.floor(y) * canvas.width * 4 + Math.floor(x - 1) * 4
-            const neighborR = imageData.data[neighborIndex] || 0
-            const neighborG = imageData.data[neighborIndex + 1] || 0
-            const neighborB = imageData.data[neighborIndex + 2] || 0
-            const neighborBrightness = (neighborR + neighborG + neighborB) / 3
-            
-            if (Math.abs(brightness - neighborBrightness) > 15) {
-              pixelVariation++
-            }
-          }
-        }
-      }
-    }
-    
-    if (totalPixels === 0) return false
-    
-    avgBrightness /= totalPixels
-    const variationRatio = pixelVariation / totalPixels
-    const darkRatio = darkPixels / totalPixels
-    
-    // Simple detection criteria:
-    // - Not completely dark or completely bright (indicates something is there)
-    // - Has some pixel variation (indicates features/details)
-    // - Has some darker pixels (shadows, hair, features)
-    const hasReasonableBrightness = avgBrightness > 30 && avgBrightness < 220
-    const hasVariation = variationRatio > 0.1 // At least 10% pixels have variation
-    const hasDarkFeatures = darkRatio > 0.1 && darkRatio < 0.7 // 10-70% dark pixels
-    
-    return hasReasonableBrightness && hasVariation && hasDarkFeatures
-  }, [streamReady])
-
-  // Start face detection loop with improved stability
-  useEffect(() => {
-    if (streamReady && !detectionRef.current) {
-      let consecutiveDetections = 0
-      const requiredConsecutiveDetections = 3 // Require 3 consecutive detections
-      
-      detectionRef.current = window.setInterval(() => {
-        const detected = detectFace()
-        
-        if (detected) {
-          consecutiveDetections++
-          if (consecutiveDetections >= requiredConsecutiveDetections) {
-            setFaceDetected(true)
-            
-            // Auto capture when face is consistently detected
-            if (countdown === 0 && !countdownRef.current) {
-              setCountdown(3)
-              countdownRef.current = window.setInterval(() => {
-                setCountdown(prev => {
-                  if (prev <= 1) {
-                    if (countdownRef.current) {
-                      clearInterval(countdownRef.current)
-                      countdownRef.current = null
-                    }
-                    // Inline capture to avoid dependency issues
-                    if (videoRef.current && canvasRef.current && streamReady) {
-                      const video = videoRef.current
-                      const canvas = canvasRef.current
-                      const context = canvas.getContext('2d')
-                      
-                      if (context && video.videoWidth > 0 && video.videoHeight > 0) {
-                        try {
-                          canvas.width = video.videoWidth
-                          canvas.height = video.videoHeight
-                          context.drawImage(video, 0, 0, canvas.width, canvas.height)
-                          
-                          const imageData = canvas.toDataURL('image/jpeg', 0.9)
-                          setCapturedImage(imageData)
-                          onImageCapture(imageData)
-                          
-                          // Stop camera after capture
-                          if (streamRef.current) {
-                            streamRef.current.getTracks().forEach(track => track.stop())
-                            streamRef.current = null
-                          }
-                          setIsStreaming(false)
-                          setStreamReady(false)
-                          setFaceDetected(false)
-                          setCountdown(0)
-                        } catch (err) {
-                          console.error('Error capturing image:', err)
-                        }
-                      }
-                    }
-                    return 0
-                  }
-                  return prev - 1
-                })
-              }, 1000)
-            }
-          }
-        } else {
-          consecutiveDetections = 0
-          setFaceDetected(false)
-          
-          // Cancel countdown if face is no longer detected
-          if (countdownRef.current && countdown > 0) {
-            clearInterval(countdownRef.current)
-            countdownRef.current = null
-            setCountdown(0)
-          }
-        }
-      }, 300) // Slightly slower for better performance
-    }
-    
-    return () => {
-      if (detectionRef.current) {
-        clearInterval(detectionRef.current)
-        detectionRef.current = null
-      }
-      if (countdownRef.current) {
-        clearInterval(countdownRef.current)
-        countdownRef.current = null
-      }
-    }
-  }, [streamReady, detectFace, countdown])
 
   // Start camera
   const startCamera = useCallback(async () => {
@@ -253,8 +81,7 @@ export function AutoCamera({
         video: {
           width: { ideal: width, min: 320, max: 1280 },
           height: { ideal: height, min: 240, max: 720 },
-          facingMode: 'user',
-          frameRate: { ideal: 15, max: 30 } // Optimize for face detection
+          facingMode: 'user'
         },
         audio: false
       }
@@ -314,20 +141,8 @@ export function AutoCamera({
       videoRef.current.srcObject = null
     }
     
-    if (detectionRef.current) {
-      clearInterval(detectionRef.current)
-      detectionRef.current = null
-    }
-    
-    if (countdownRef.current) {
-      clearInterval(countdownRef.current)
-      countdownRef.current = null
-    }
-    
     setIsStreaming(false)
     setStreamReady(false)
-    setFaceDetected(false)
-    setCountdown(0)
   }, [])
 
   // Capture image
@@ -359,6 +174,7 @@ export function AutoCamera({
       setError('Failed to capture image. Please try again.')
     }
   }, [streamReady, onImageCapture, stopCamera])
+
 
   // Auto start camera when component mounts
   useEffect(() => {
@@ -459,59 +275,38 @@ export function AutoCamera({
                 <div className="absolute inset-0 flex items-center justify-center bg-black bg-opacity-50 rounded-lg">
                   <div className="text-white text-center">
                     <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-white mx-auto mb-2"></div>
-                    <p className="text-sm">Starting face detection...</p>
+                    <p className="text-sm">Starting camera...</p>
                   </div>
                 </div>
               )}
               
-              {/* Face detection guide */}
+              {/* Face positioning guide circle */}
               {streamReady && (
                 <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
-                  <div className={cn(
-                    'w-48 h-48 border-2 rounded-full transition-all duration-200',
-                    faceDetected ? 'border-green-400 bg-green-400 bg-opacity-10' : 'border-white opacity-70'
-                  )}>
-                    <div className={cn(
-                      'w-full h-full border-2 rounded-full transition-all duration-200',
-                      faceDetected ? 'border-green-400 animate-pulse' : 'border-gray-400'
-                    )}></div>
+                  <div className="relative">
+                    {/* Outer circle */}
+                    <div className="w-52 h-52 border-4 border-white rounded-full opacity-90 shadow-2xl">
+                      {/* Inner animated circle */}
+                      <div className="w-full h-full border-2 border-blue-400 rounded-full animate-pulse shadow-lg"></div>
+                    </div>
+                    {/* Instruction text below circle */}
+                    <div className="absolute top-full mt-4 left-1/2 transform -translate-x-1/2 text-center">
+                      <p className="text-white text-sm font-medium bg-black bg-opacity-50 px-3 py-1 rounded-full">
+                        Position your face in the circle
+                      </p>
+                    </div>
                   </div>
                 </div>
               )}
               
-              {/* Auto capture countdown */}
-              {countdown > 0 && (
-                <div className="absolute inset-0 flex items-center justify-center">
-                  <div className="bg-black bg-opacity-50 rounded-full w-16 h-16 flex items-center justify-center">
-                    <span className="text-white text-2xl font-bold">{countdown}</span>
-                  </div>
-                </div>
-              )}
             </div>
             
             {/* Status feedback */}
             {streamReady && (
               <div className="mt-2 text-center">
-                <div className={cn(
-                  'inline-flex items-center gap-2 px-3 py-1 rounded-full text-xs font-medium transition-all duration-200',
-                  faceDetected 
-                    ? 'bg-green-100 text-green-800 animate-pulse' 
-                    : 'bg-blue-100 text-blue-800'
-                )}>
-                  <div className={cn(
-                    'w-2 h-2 rounded-full transition-all duration-200',
-                    faceDetected ? 'bg-green-400 animate-pulse' : 'bg-blue-400'
-                  )} />
-                  {faceDetected 
-                    ? (countdown > 0 ? `Capturing in ${countdown}...` : 'Face detected - Auto capturing soon!') 
-                    : 'Position your face inside the circle'
-                  }
-                </div>
-                <div className="mt-1 text-xs text-gray-500">
-                  {faceDetected 
-                    ? 'Hold still for automatic capture'
-                    : 'Center your face in the circle and look at the camera'
-                  }
+                <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
+                  {/* <div className="w-2 h-2 rounded-full bg-blue-400" /> */}
+                  Camera ready - Align your face with the circle
                 </div>
               </div>
             )}
@@ -519,7 +314,7 @@ export function AutoCamera({
             
             {/* Manual capture button */}
             <div className="flex justify-center gap-2 mt-4">
-              <Button variant="outline" onClick={stopCamera} disabled={disabled} size="sm">
+              <Button variant="outline" onClick={() => { stopCamera(); onCancel?.(); }} disabled={disabled} size="sm">
                 Cancel
               </Button>
               <Button
@@ -540,28 +335,26 @@ export function AutoCamera({
               </svg>
             </div>
             <p className="text-lg font-medium text-gray-900 mb-2">
-              {isCapacitor ? 'Face Verification' : 'Auto Face Detection'}
+              {isCapacitor ? 'Face Verification' : 'Take Photo'}
             </p>
             <p className="text-sm text-gray-600 mb-4">
               {isCapacitor 
                 ? 'Take a selfie using your device camera'
-                : 'Camera will start automatically and capture when face is detected'
+                : 'Use your camera to take a photo'
               }
             </p>
-            {!autoStart && (
-              <Button
-                onClick={isCapacitor ? captureWithCapacitor : startCamera}
-                className="bg-green-600 hover:bg-green-700"
-                disabled={disabled || isInitializing}
-              >
-                {isInitializing 
-                  ? 'Starting...' 
-                  : isCapacitor 
-                    ? 'Take Selfie' 
-                    : 'Start Camera'
-                }
-              </Button>
-            )}
+            <Button
+              onClick={isCapacitor ? captureWithCapacitor : startCamera}
+              className="bg-green-600 hover:bg-green-700"
+              disabled={disabled || isInitializing}
+            >
+              {isInitializing 
+                ? 'Starting...' 
+                : isCapacitor 
+                  ? 'Take Selfie' 
+                  : 'Start Camera'
+              }
+            </Button>
           </div>
         )}
       </div>
