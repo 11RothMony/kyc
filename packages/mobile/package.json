@@ -1,0 +1,19 @@
+{
+  "name": "mobile",
+  "version": "1.0.0",
+  "description": "KYC Compare ID Card - Mobile App",
+  "private": true,
+  "scripts": {
+    "build": "cd ../web && yarn build",
+    "sync": "cd ../web && npx cap sync",
+    "build:sync": "yarn build && yarn sync",
+    "ios:open": "cd ../web && npx cap open ios",
+    "android:open": "cd ../web && npx cap open android",
+    "ios:run": "cd ../web && npx cap run ios",
+    "android:run": "cd ../web && npx cap run android",
+    "ios:build": "yarn build:sync && yarn ios:open",
+    "android:build": "yarn build:sync && yarn android:open"
+  },
+  "dependencies": {},
+  "devDependencies": {}
+}

@@ -188,6 +188,16 @@ export function AutoCamera({
     }
   }, [autoStart, isStreaming, capturedImage, startCamera, isCapacitor])
 
+  // Detect Capacitor environment
+  useEffect(() => {
+    const checkCapacitor = () => {
+      const isCapacitorEnv = typeof window !== 'undefined' && !!(window as any).Capacitor
+      setIsCapacitor(isCapacitorEnv)
+    }
+    
+    checkCapacitor()
+  }, [])
+
   // Cleanup on unmount
   useEffect(() => {
     return () => {

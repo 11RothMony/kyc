@@ -1,1 +1,1 @@
-self.__REACT_LOADABLE_MANIFEST="{}"
+self.__REACT_LOADABLE_MANIFEST='{"../lib/camera-service.ts -> @capacitor/camera":{"id":7849,"files":["static/chunks/849.10461a3da5361af2.js"]},"../lib/ocr/service.ts -> ./mock-service":{"id":4575,"files":[]}}';

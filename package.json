@@ -10,7 +10,13 @@
     "build": "yarn workspace web build",
     "start": "yarn workspace web start",
     "lint": "yarn workspace web lint",
-    "type-check": "yarn workspace web type-check"
+    "type-check": "yarn workspace web type-check",
+    "mobile:build": "yarn workspace mobile build:sync",
+    "mobile:ios": "yarn workspace mobile ios:build",
+    "mobile:android": "yarn workspace mobile android:build",
+    "mobile:ios:run": "yarn workspace mobile ios:run",
+    "mobile:android:run": "yarn workspace mobile android:run",
+    "mobile:sync": "yarn workspace mobile sync"
   },
   "devDependencies": {
     "@types/node": "^20.0.0",

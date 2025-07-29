@@ -292,7 +292,7 @@
       "id": "13",
       "title": "Mobile App Conversion with Capacitor",
       "description": "Convert the Next.js web application to a mobile app using Capacitor framework",
-      "status": "pending",
+      "status": "completed",
       "priority": "high",
       "category": "mobile",
       "dependencies": ["1", "2", "4", "5", "6"],
@@ -300,27 +300,27 @@
         {
           "id": "13.1",
           "description": "Install Capacitor CLI and core packages (@capacitor/core, @capacitor/ios, @capacitor/android)",
-          "status": "pending"
+          "status": "completed"
         },
         {
           "id": "13.2", 
           "description": "Initialize Capacitor project with proper configuration",
-          "status": "pending"
+          "status": "completed"
         },
         {
           "id": "13.3",
           "description": "Configure capacitor.config.ts for mobile deployment",
-          "status": "pending"
+          "status": "completed"
         },
         {
           "id": "13.4",
           "description": "Modify next.config.mjs to enable static export for Capacitor",
-          "status": "pending"
+          "status": "completed"
         },
         {
           "id": "13.5",
           "description": "Replace browser camera APIs with Capacitor Camera plugin",
-          "status": "pending"
+          "status": "completed"
         },
         {
           "id": "13.6",
@@ -330,32 +330,32 @@
         {
           "id": "13.7",
           "description": "Configure iOS project with Xcode integration",
-          "status": "pending"
+          "status": "completed"
         },
         {
           "id": "13.8",
           "description": "Configure Android project with Android Studio integration", 
-          "status": "pending"
+          "status": "completed"
         },
         {
           "id": "13.9",
           "description": "Set up app icons, splash screens, and mobile permissions",
-          "status": "pending"
+          "status": "completed"
         },
         {
           "id": "13.10",
           "description": "Test camera functionality and face recognition on mobile devices",
-          "status": "pending"
+          "status": "completed"
         },
         {
           "id": "13.11",
           "description": "Configure build scripts for iOS and Android platforms",
-          "status": "pending"
+          "status": "completed"
         },
         {
           "id": "13.12",
           "description": "Ensure all KYC features work properly on mobile",
-          "status": "pending"
+          "status": "completed"
         }
       ],
       "acceptanceCriteria": [
